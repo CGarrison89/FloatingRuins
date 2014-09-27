@@ -1,3 +1,25 @@
+1.7.10.r02 - 07-Aug-2014
+- fixed tooltip messages
+1.7.10.r01 - 30-Jun-2014
+- initial 1.7.10 update
+1.7.2.r06 - 8-Jun-2014
+- fixed crash due to non-positive method result
+1.7.2.r05 - 23-May-2014
+- categorized config
+- removed world gen delay to improve performance
+1.7.2.r04 - 25-Apr-2014
+- optimized block movements with regard to block notifications
+1.7.2.r03 - 18-Apr-2014
+- added config GUI
+- added tooltip localizations
+1.7.2.r02 - 28-Jan-2014
+- fixed shape code to produce same shapes as before
+- toyed with default settings some
+- fixed snow blocks on the floor of igloos
+1.7.2.r01 - 19-Jan-2014
+- updated for 1.7.2
+- new code for determining island shape
+- improved island depth/radius options
 1.6.4.r02 - 19-Dec-2013
 - refactoring for /frgen command
 - added code to prevent islands from spawning in villages

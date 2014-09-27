@@ -7,6 +7,8 @@ import bspkrs.floatingruins.FloatingRuins;
 import bspkrs.util.CommonUtils;
 import bspkrs.util.Const;
 import bspkrs.util.ModVersionChecker;
+import cpw.mods.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -16,22 +18,24 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameRegistry;
 
-@Mod(name = "FloatingRuins", modid = "FloatingRuins", version = "Forge " + FloatingRuins.VERSION_NUMBER, dependencies = "required-after:bspkrsCore", useMetadata = true)
+@Mod(modid = Reference.MODID, name = Reference.NAME, version = "@MOD_VERSION@", dependencies = "required-after:bspkrsCore@[@BSCORE_VERSION@,)", useMetadata = true,
+        guiFactory = "bspkrs.floatingruins.fml.gui.ModGuiFactoryHandler")
 public class FloatingRuinsMod
 {
     public ModVersionChecker       versionChecker;
     private final String           versionURL = Const.VERSION_URL + "/Minecraft/" + Const.MCVERSION + "/floatingRuinsForge.version";
     private final String           mcfTopic   = "http://www.minecraftforum.net/topic/1009577-";
     
-    @Metadata(value = "FloatingRuins")
+    @Metadata(value = Reference.MODID)
     public static ModMetadata      metadata;
     
-    @Instance(value = "FloatingRuins")
+    @Instance(value = Reference.MODID)
     public static FloatingRuinsMod instance;
     
-    @SidedProxy(clientSide = "bspkrs.floatingruins.fml.ClientProxy", serverSide = "bspkrs.floatingruins.fml.CommonProxy")
+    @SidedProxy(clientSide = Reference.PROXY_CLIENT, serverSide = Reference.PROXY_COMMON)
     public static CommonProxy      proxy;
     
     @EventHandler
@@ -44,23 +48,29 @@ public class FloatingRuinsMod
         if (!CommonUtils.isObfuscatedEnv())
         { // debug settings for deobfuscated execution
           //            FloatingRuins.rarity = 44;
-          //            //FloatingRuins.harderDungeons = true;
+          //            FloatingRuins.harderDungeons = true;
           //            FloatingRuins.allowDebugLogging = true;
           //            FloatingRuins.allowInSuperFlat = true;
-          //            //FloatingRuins.biomeIDBlacklist = "";// "0;1;3;4;5;6;7;8;9;13;17;";
+          //            FloatingRuins.biomeIDBlacklist = "";// "0;1;3;4;5;6;7;8;9;13;17;";
           //            FloatingRuins.baseDepth = 30;
           //            if (file.exists())
           //                file.delete();
         }
         
-        FloatingRuins.loadConfig(file);
+        FloatingRuins.initConfig(file);
+        
+        if (!CommonUtils.isObfuscatedEnv())
+            FloatingRuins.allowDebugLogging = true;
     }
     
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
-        // fuck it... hopefully a million is high enough to be last?
+        // hopefully a million is high enough to be last?
         GameRegistry.registerWorldGenerator(new FloatingRuinsWorldGenerator(), 1000000);
+        
+        FMLCommonHandler.instance().bus().register(instance);
+        
         proxy.registerTickHandler();
         
         if (bspkrsCoreMod.instance.allowUpdateCheck)
@@ -74,5 +84,15 @@ public class FloatingRuinsMod
     public void serverStarting(FMLServerStartingEvent event)
     {
         //event.registerServerCommand(new CommandFRGen());
+    }
+    
+    @SubscribeEvent
+    public void onConfigChanged(OnConfigChangedEvent event)
+    {
+        if (event.modID.equals(Reference.MODID))
+        {
+            Reference.config.save();
+            FloatingRuins.syncConfig(false);
+        }
     }
 }

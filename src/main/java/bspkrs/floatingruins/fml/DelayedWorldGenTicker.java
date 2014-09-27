@@ -7,7 +7,7 @@ import bspkrs.floatingruins.FloatingRuins;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
-import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
+import cpw.mods.fml.common.gameevent.TickEvent.WorldTickEvent;
 
 public class DelayedWorldGenTicker
 {
@@ -19,7 +19,7 @@ public class DelayedWorldGenTicker
     
     public DelayedWorldGenTicker(int delayTicks, World world, Random random, int x, int z)
     {
-        this.delayTicks = delayTicks;
+        this.delayTicks = Math.max(delayTicks, 1);
         this.world = world;
         this.random = random;
         this.x = x;
@@ -28,12 +28,12 @@ public class DelayedWorldGenTicker
     }
     
     @SubscribeEvent
-    public void onTick(ServerTickEvent event)
+    public void onTick(WorldTickEvent event)
     {
         if (event.phase.equals(Phase.START))
             return;
         
-        if (--delayTicks <= 0)
+        if (--delayTicks == 0)
         {
             FloatingRuins.generateSurface(world, random, x, z, true);
             FMLCommonHandler.instance().bus().unregister(this);
