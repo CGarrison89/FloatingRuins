@@ -42,8 +42,6 @@ public class WorldGenFloatingIsland extends WorldGenerator
     @Override
     public boolean generate(World world, Random random, int x, int y, int z)
     {
-        boolean ran = false;
-        
         this.random = FloatingRuins.getRandom(world, x, z);
         
         if (yGround == 0)
@@ -55,14 +53,11 @@ public class WorldGenFloatingIsland extends WorldGenerator
         isLavaNearby = false;
         
         // Added a check for dungeon rarity config
+        //offloaded dungeon generation into doGenerateSurface in order to allow for a parameter to omit dungeon gen
         if (isTgtSuitableForGeneration(world, tgtOrigin))
-        {
-            ran = genIsland(world, radius, x, y, z);
-            if (ran && random.nextInt(FloatingRuins.rarityDungeon) == 0)
-                (new WorldGenFloatingIslandRuin(isLavaNearby)).generate(world, random, x, y, z);
-        }
+            return genIsland(world, radius, x, y, z);
         
-        return ran;
+        return false;
     }
     
     public boolean isTgtSuitableForGeneration(World world, Coord tgtOrigin)

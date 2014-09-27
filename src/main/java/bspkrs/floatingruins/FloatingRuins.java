@@ -272,19 +272,58 @@ public final class FloatingRuins
         
         Reference.config.save();
     }
-    
+
     /**
      * Method used during world generation that calculates all necessary generation variables and determines if this x,z location is
      * suitable for island generation. If conditions are met doGenerateSurface() is called.
      */
     public static void generateSurface(World world, Random random, int x, int z, boolean isWorldGen)
     {
+    	generateSurface(world, random, x, z, isWorldGen, -1, -1, -1, -1, true, -1);
+    }
+
+    /**
+     * Method used during world generation that calculates all necessary generation variables and determines if this x,z location is
+     * suitable for island generation. If conditions are met doGenerateSurface() is called.
+     */
+    public static void generateSurface(World world, Random random, int x, int z, boolean isWorldGen, int height)
+    {
+    	generateSurface(world, random, x, z, isWorldGen, height, -1, -1, -1, true, -1);
+    }
+
+    /**
+     * Method used during world generation that calculates all necessary generation variables and determines if this x,z location is
+     * suitable for island generation. If conditions are met doGenerateSurface() is called.
+     */
+    public static void generateSurface(World world, Random random, int x, int z, boolean isWorldGen, int height, int radius)
+    {
+    	generateSurface(world, random, x, z, isWorldGen, height, radius, -1, -1, true, -1);
+    }
+
+    /**
+     * Method used during world generation that calculates all necessary generation variables and determines if this x,z location is
+     * suitable for island generation. If conditions are met doGenerateSurface() is called.
+     */
+    public static void generateSurface(World world, Random random, int x, int z, boolean isWorldGen, int height, int radius, int depth)
+    {
+    	generateSurface(world, random, x, z, isWorldGen, height, radius, depth, -1, true, -1);
+    }
+    
+    /**
+     * Method used during world generation that calculates all necessary generation variables and determines if this x,z location is
+     * suitable for island generation. If conditions are met doGenerateSurface() is called.
+     */
+    public static void generateSurface(World world, Random random, int x, int z, boolean isWorldGen, int tgtY, int radius, int depth, int islandType, boolean tryGenerateDungeon, int noDungeonWeight)
+    {
         if ((world.getWorldInfo().getTerrainType() != WorldType.FLAT || allowInSuperFlat))
         {
             if (!CommonUtils.isIDInList(world.provider.dimensionId, dimensionIDBlacklist))
             {
-                random = getRandom(world, x, z);
-                int tgtY = getWeightedInt(heightMin, heightMean, heightMax, heightNorm, random);
+            	if (random == null)
+            		random = getRandom(world, x, z);
+            	
+            	if (tgtY < 0)
+            		tgtY = getWeightedInt(heightMin, heightMean, heightMax, heightNorm, random);
                 
                 if (isWorldGen)
                 {
@@ -292,7 +331,7 @@ public final class FloatingRuins
                     z += random.nextInt(16);
                 }
                 
-                WorldGenFloatingIsland islandGenerator = getFloatingIslandGenerator(world, random, x, tgtY, z);
+                WorldGenFloatingIsland islandGenerator = getFloatingIslandGenerator(world, random, x, tgtY, z, radius, depth, islandType);
                 
                 if (!isWorldGen || random.nextInt(rarity) == 0)
                 {
@@ -318,7 +357,7 @@ public final class FloatingRuins
                         }
                         debug(debug, x, z, chunksToRetry);
                     }
-                    else if (!doGenerateSurface(world, random, x, tgtY, z, islandGenerator))
+                    else if (!doGenerateSurface(world, random, x, tgtY, z, islandGenerator, tryGenerateDungeon, noDungeonWeight))
                     {
                         debug = "Location %d, %d failed during island generation";
                         if (isWorldGen)
@@ -334,7 +373,7 @@ public final class FloatingRuins
                     if (getBlacklistBiomeIDWithinRange(world, x, z, islandGenerator.radius) == -1
                             && !isVillageNearby(world, x, islandGenerator.yGround, z, islandGenerator.radius))
                     {
-                        if (doGenerateSurface(world, random, x, tgtY, z, islandGenerator))
+                        if (doGenerateSurface(world, random, x, tgtY, z, islandGenerator, tryGenerateDungeon, noDungeonWeight))
                         {
                             chunksToRetry--;
                             debug("Successfully generated a \"retry\" floating island at %d,%d. \"Retry\" count decremented (%d).", x, z, chunksToRetry);
@@ -350,22 +389,61 @@ public final class FloatingRuins
      */
     public static boolean doGenerateSurface(World world, Random random, int x, int tgtY, int z, WorldGenFloatingIsland islandGenerator)
     {
+    	return doGenerateSurface(world, random, x, tgtY, z, islandGenerator, true, -1);
+    }
+    
+    /**
+     * Accepts a WorldGenFloatingIsland object (or gets a new one) and executes the WorldGenFloatingIsland.generate() method
+     */
+    public static boolean doGenerateSurface(World world, Random random, int x, int tgtY, int z, WorldGenFloatingIsland islandGenerator, boolean tryGenerateDungeon)
+    {
+    	return doGenerateSurface(world, random, x, tgtY, z, islandGenerator, tryGenerateDungeon, -1);
+    }
+    
+    /**
+     * Accepts a WorldGenFloatingIsland object (or gets a new one) and executes the WorldGenFloatingIsland.generate() method
+     */
+    public static boolean doGenerateSurface(World world, Random random, int x, int tgtY, int z, WorldGenFloatingIsland islandGenerator, boolean tryGenerateDungeon, int noDungeonWeight)
+    {
+    	boolean genSuccess = false;
+        boolean isLavaNearby = false;	//this was a private var in WorldGenFloatingIsland.generate, it was explicitly set false before generating a dungeon
+        
+        int dungeonChanceNone = noDungeonWeight;
+        
+        if (dungeonChanceNone < 0)
+        	dungeonChanceNone = FloatingRuins.rarityDungeon;
+    	
         if (islandGenerator == null)
             islandGenerator = getFloatingIslandGenerator(world, random, x, tgtY, z);
         
-        return islandGenerator.generate(world, random, x, tgtY, z);
+        genSuccess = islandGenerator.generate(world, random, x, tgtY, z);
+    
+		if (tryGenerateDungeon && genSuccess && random.nextInt(dungeonChanceNone) == 0)
+            (new WorldGenFloatingIslandRuin(isLavaNearby)).generate(world, random, x, tgtY, z);
+		
+		return genSuccess;
+    }
+    
+    public static WorldGenFloatingIsland getFloatingIslandGenerator(World world, Random random, int x, int tgtY, int z)
+    {
+        return getFloatingIslandGenerator(world, random, x, tgtY, z, -1, -1, -1);
     }
     
     /**
      * Randomly calculates the variables needed to create a WorldGenFloatingIsland object and returns a new WorldGenFloatingIsland object
      */
-    public static WorldGenFloatingIsland getFloatingIslandGenerator(World world, Random random, int x, int tgtY, int z)
+    public static WorldGenFloatingIsland getFloatingIslandGenerator(World world, Random random, int x, int tgtY, int z, int radius, int depth, int islandType)
     {
-        int radius = getWeightedInt(radiusMin, radiusMean, radiusMax, radiusNorm, random);
+    	if (radius < 0)
+    		radius = getWeightedInt(radiusMin, radiusMean, radiusMax, radiusNorm, random);
+    	
         int yGround = CommonUtils.getHighestGroundBlock(world, x, tgtY, z);
         
-        int depth = getWeightedInt(depthMin, depthMean, depthMax, depthNorm, random);
-        int islandType = getWeightedIslandType(random);
+        if (depth < 0)
+        	depth = getWeightedInt(depthMin, depthMean, depthMax, depthNorm, random);
+        
+        if (islandType < 0)
+        	islandType = getWeightedIslandType(random);
         
         WorldType wt = world.getWorldInfo().getTerrainType();
         if (depth > yGround - (wt == WorldType.FLAT ? 1 : 5))

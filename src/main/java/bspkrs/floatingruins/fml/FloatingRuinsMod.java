@@ -4,6 +4,7 @@ import java.io.File;
 
 import bspkrs.bspkrscore.fml.bspkrsCoreMod;
 import bspkrs.floatingruins.FloatingRuins;
+import bspkrs.floatingruins.CommandFRGen;
 import bspkrs.util.CommonUtils;
 import bspkrs.util.Const;
 import bspkrs.util.ModVersionChecker;
@@ -83,7 +84,7 @@ public class FloatingRuinsMod
     @EventHandler
     public void serverStarting(FMLServerStartingEvent event)
     {
-        //event.registerServerCommand(new CommandFRGen());
+        event.registerServerCommand(new CommandFRGen());
     }
     
     @SubscribeEvent
